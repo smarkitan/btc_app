@@ -35,15 +35,17 @@ app.layout = html.Div([
     # Graficul va fi actualizat aici
     dcc.Graph(
         id='crypto-graph',
-        config={
-            'displayModeBar': False,  # Dezactivează bara de mod
-            'displaylogo': False,     # Dezactivează logo-ul Plotly
-            'editable': False,        # Dezactivează opțiunea de editare
-            'scrollZoom': False,      # Dezactivează zoom-ul cu scroll
-            'showTips': False,        # Dezactivează tooltips
-            'showAxisDragHandles': False,  # Dezactivează manipulatoarele de dragare a axelor
-            'modeBarButtonsToRemove': ['zoom', 'pan', 'resetScale2d', 'hoverClosestCartesian', 'hoverCompareCartesian', 'toImage', 'sendDataToCloud']
-        },
+    config={
+        'displayModeBar': False,  
+        'displaylogo': False,     
+        'editable': False,        
+        'scrollZoom': False,      
+       'showTips': False,        
+        'showAxisDragHandles': False,  
+        'modeBarButtonsToRemove': ['zoom', 'pan', 'resetScale2d', 'hoverClosestCartesian', 'hoverCompareCartesian', 'toImage', 'sendDataToCloud'],
+        #'staticPlot': True  # Face graficul complet static
+    },
+
         style={'width': '100%', 'height': '70vh'}  # Ajustează înălțimea pentru a se potrivi mai bine
     ),
 
@@ -59,6 +61,7 @@ app.layout = html.Div([
      Output('current-symbol', 'data'),
      Output('initial-load', 'data')],
     [Input('search-button', 'n_clicks'),
+     Input('crypto-symbol', 'n_submit'),  # Noua intrare pentru n_submit
      Input('crypto-symbol', 'value'),
      Input('button-5d', 'n_clicks'),
      Input('button-1m', 'n_clicks'),
@@ -71,10 +74,11 @@ app.layout = html.Div([
     [State('current-range', 'data'),
      State('current-symbol', 'data')]
 )
-def update_graph(n_clicks_search, symbol, n_clicks_5d, n_clicks_1m, n_clicks_3m, n_clicks_6m, n_clicks_1y, n_clicks_5y, n_clicks_all, initial_load, current_range, current_symbol):
-    if initial_load:  # Verificăm dacă aplicația s-a încărcat inițial
+def update_graph(n_clicks_search, n_submit, symbol, n_clicks_5d, n_clicks_1m, n_clicks_3m, n_clicks_6m, n_clicks_1y, n_clicks_5y, n_clicks_all, initial_load, current_range, current_symbol):
+    if initial_load:
         symbol = 'BTC-USD'
-        initial_load = False  # Setează pentru a evita apelarea repetată
+        initial_load = False
+
 
     try:
         # Verifică dacă simbolul este setat implicit la încărcare
@@ -181,4 +185,4 @@ def update_graph(n_clicks_search, symbol, n_clicks_5d, n_clicks_1m, n_clicks_3m,
     return fig, current_range, current_symbol, initial_load
 
 if __name__ == '__main__':
-    app.run_server(host='0.0.0.0', port=10000, debug=True)
+    app.run_server(host='0.0.0.0', port=10000, debug=False)
