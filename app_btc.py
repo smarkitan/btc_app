@@ -35,31 +35,33 @@ app.layout = html.Div([
     # Graficul va fi actualizat aici
     dcc.Graph(
         id='crypto-graph',
-    config={
-        'displayModeBar': False,  
-        'displaylogo': False,     
-        'editable': False,        
-        'scrollZoom': False,      
-       'showTips': False,        
-        'showAxisDragHandles': False,  
-        'modeBarButtonsToRemove': ['zoom', 'pan', 'resetScale2d', 'hoverClosestCartesian', 'hoverCompareCartesian', 'toImage', 'sendDataToCloud'],
-        #'staticPlot': True  # Face graficul complet static
-    },
-
+        config={
+            'displayModeBar': False,  
+            'displaylogo': False,     
+            'editable': False,        
+            'scrollZoom': False,      
+            'showTips': False,        
+            'showAxisDragHandles': False,  
+            'modeBarButtonsToRemove': ['zoom', 'pan', 'resetScale2d', 'hoverClosestCartesian', 'hoverCompareCartesian', 'toImage', 'sendDataToCloud'],
+        },
         style={'width': '100%', 'height': '70vh'}  # Ajustează înălțimea pentru a se potrivi mai bine
     ),
 
     # Stocarea intervalului curent și simbolului curent
     dcc.Store(id='current-range', data={'start': None, 'end': None}),  # Stocăm intervalul curent
     dcc.Store(id='current-symbol', data='BTC-USD'),  # Stocăm simbolul curent
-    dcc.Store(id='initial-load', data=True)  # Indică că aplicația s-a încărcat inițial
+    dcc.Store(id='initial-load', data=True),  # Indică că aplicația s-a încărcat inițial
+
+    # Mesajul de încărcare
+    html.Div(id='loading-message', style={'textAlign': 'center', 'marginTop': '20px', 'color': 'red'})
 ])
 
 @app.callback(
     [Output('crypto-graph', 'figure'),
      Output('current-range', 'data'),
      Output('current-symbol', 'data'),
-     Output('initial-load', 'data')],
+     Output('initial-load', 'data'),
+     Output('loading-message', 'children')],
     [Input('search-button', 'n_clicks'),
      Input('crypto-symbol', 'n_submit'),  # Noua intrare pentru n_submit
      Input('crypto-symbol', 'value'),
@@ -75,10 +77,14 @@ app.layout = html.Div([
      State('current-symbol', 'data')]
 )
 def update_graph(n_clicks_search, n_submit, symbol, n_clicks_5d, n_clicks_1m, n_clicks_3m, n_clicks_6m, n_clicks_1y, n_clicks_5y, n_clicks_all, initial_load, current_range, current_symbol):
+    triggered_id = ctx.triggered_id
+    loading_message = ""
+
+    # Dacă aplicația este încă în stadiul de încărcare inițială
     if initial_load:
+        loading_message = "The page is loading from a web service that has just started. Please wait..."
         symbol = 'BTC-USD'
         initial_load = False
-
 
     try:
         # Verifică dacă simbolul este setat implicit la încărcare
@@ -131,8 +137,8 @@ def update_graph(n_clicks_search, n_submit, symbol, n_clicks_5d, n_clicks_1m, n_
         ))
 
         # Setăm intervalul de timp pe baza butoanelor apăsate
-        if ctx.triggered_id and ctx.triggered_id.startswith('button'):
-            button_id = ctx.triggered_id
+        if triggered_id and triggered_id.startswith('button'):
+            button_id = triggered_id
             if button_id == 'button-5d':
                 new_range = {'start': df['Date'].max() - timedelta(days=5), 'end': df['Date'].max()}
             elif button_id == 'button-1m':
@@ -170,6 +176,9 @@ def update_graph(n_clicks_search, n_submit, symbol, n_clicks_5d, n_clicks_1m, n_
             margin=dict(l=10, r=10, t=100, b=40)  # Ajustează marginile pentru a oferi spațiu pentru titlu
         )
 
+        # După încărcarea datelor, ștergem mesajul de încărcare
+        loading_message = ""
+
     except Exception as e:
         # Dacă există o eroare, arată un grafic gol cu mesajul de eroare
         fig = go.Figure()
@@ -182,7 +191,7 @@ def update_graph(n_clicks_search, n_submit, symbol, n_clicks_5d, n_clicks_1m, n_
         current_range = {'start': start_date.date(), 'end': end_date.date()}
         current_symbol = 'BTC-USD'  # Folosește simbolul default în caz de eroare
 
-    return fig, current_range, current_symbol, initial_load
+    return fig, current_range, current_symbol, initial_load, loading_message
 
 if __name__ == '__main__':
     app.run_server(host='0.0.0.0', port=10000, debug=False)
